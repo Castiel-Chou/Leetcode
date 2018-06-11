@@ -55,8 +55,25 @@ words[i] will only consist of lowercase letters.
 
 
 
+import java.util.HashSet;
+import java.util.Set;
+
 class Solution {
     public int uniqueMorseRepresentations(String[] words) {
-        
+        String[] Morse = new String[]{".-","-...","-.-.","-..",".","..-.","--.","....","..",".---","-.-",".-..","--","-.","---",".--.","--.-",".-.","...","-","..-","...-",".--","-..-","-.--","--.."};
+        Set<String> re = new HashSet();
+        for(String word:words){
+            StringBuilder sb = new StringBuilder();
+            for(char c:word.toCharArray()){
+                sb.append(Morse[c - 'a']);
+            }
+            re.add(sb.toString());
+        }
+        return re.size();
+    }
+    public static void main(String args[]){
+        String[] words = new String[]{"gin", "zen", "gig", "msg"};
+        Solution sol = new Solution();
+        System.out.println(sol.uniqueMorseRepresentations(words));
     }
 }
