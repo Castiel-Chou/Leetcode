@@ -1,0 +1,143 @@
+Given an array of 2n integers, your task is to group these integers into n pairs of integer, say (a1, b1), (a2, b2), ..., (an, bn) which makes sum of min(ai, bi) for all i from 1 to n as large as possible.
+
+Example 1:
+Input: [1,4,3,2]
+
+Output: 4
+Explanation: n is 2, and the maximum sum of pairs is 4 = min(1, 2) + min(3, 4).
+Note:
+n is a positive integer, which is in the range of [1, 10000].
+All the integers in the array will be in the range of [-10000, 10000].
+
+
+
+
+
+
+Approach #1 Brute Force [Time Limit Exceeded]
+Algorithm
+
+The simplest solution is to consider every possible set of pairings possible by using the elements of the numsnums array. For generating all the possible pairings, we make use of a function permute(nums, current_index). This function creates all the possible permutations of the elements of the given array.
+
+To do so, permute takes the index of the current element current_indexcurrent
+​i
+​​ ndex as one of the arguments. Then, it swaps the current element with every other element in the array, lying towards its right, so as to generate a new ordering of the array elements. After the swapping has been done, it makes another call to permute but this time with the index of the next element in the array. While returning back, we reverse the swapping done in the current function call.
+
+Thus, when we reach the end of the array, a new ordering of the array's elements is generated. We consider the elements to be taken for the pairings such that the first element of every pair comes from the first half of the new array and the second element comes from the last half of the array. Thus, we sum up the minimum elements out of all these possible pairings and find out the maximum sum out of them.
+
+The animation below depicts the ways the permutations are generated.
+
+
+public class Solution {
+    int max_sum = Integer.MIN_VALUE;
+    public int arrayPairSum(int[] nums) {
+        permute(nums, 0);
+        return max_sum;
+    }
+    public void permute(int[] nums, int l) {
+        if (l == nums.length - 1) {
+            int sum = 0;
+            for (int i = 0; i < nums.length / 2; i++) {
+                sum += Math.min(nums[i], nums[nums.length / 2 + i]);
+            }
+            max_sum = Math.max(max_sum, sum);
+        }
+        for (int i = l; i < nums.length; i++) {
+            swap(nums, i, l);
+            permute(nums, l + 1);
+            swap(nums, i, l);
+        }
+    }
+    public void swap(int[] nums, int x, int y) {
+        int temp = nums[x];
+        nums[x] = nums[y];
+        nums[y] = temp;
+    }
+}
+
+Complexity Analysis
+
+Time complexity : O(n!)O(n!). A total of n!n! permutations are possible for nn elements in the array.
+Space complexity : O(1)O(1). Constant extra space is used.
+
+
+Approach #2 Using Sorting [Accepted]
+Algorithm
+
+In order to understand this approach, let us look at the problem from a different perspective. We need to form the pairings of the array's elements such that the overall sum of the minimum out of such pairings is maximum. Thus, we can look at the operation of choosing the minimum out of the pairing, say (a, b)(a,b) as incurring a loss of a - ba−b(if a> ba>b), in the maximum sum possible.
+
+The total sum will now be maximum if the overall loss incurred from such pairings is minimized. This minimization of loss in every pairing is possible only if the numbers chosen for the pairings lie closer to each other than to the other elements of the array.
+
+Taking this into consideration, we can sort the elements of the given array and form the pairings of the elements directly in the sorted order. This will lead to the pairings of elements with minimum difference between them leading to the maximization of the required sum.
+
+public class Solution {
+    public int arrayPairSum(int[] nums) {
+        Arrays.sort(nums);
+        int sum = 0;
+        for (int i = 0; i < nums.length; i += 2) {
+            sum += nums[i];
+        }
+        return sum;
+    }
+}
+
+Complexity Analysis
+
+Time complexity : O\big(nlog(n)\big)O(nlog(n)). Sorting takes O\big(nlog(n)\big)O(nlog(n)) time. We iterate over the array only once.
+
+Space complexity : O(1)O(1). Constant extra space is used.
+
+
+Approach #3 Using Extra Array [Accepted]
+Algorithm
+
+This approach is somewhat related to the sorting approach. Since the range of elements in the given array is limited, we can make use of a hashmap arrarr, such that arr[i]arr[i] stores the frequency of occurence of (i-10000)^{th}(i−10000)
+​th
+​​  element. This subtraction is done so as to be able to map the numbers in the range −10000≤i≤−1 onto the hashmap.
+
+Thus, now instead of sorting the array's elements, we can directly traverse the hashmap in an ascending order. But, any element could also occur multiple times in the given array. We need to take this factor into account.
+
+For this, consider an example: nums: [a, b, a, b, b, a]. The sorted order of this array will be nums_sorted: [a, a, a, b, b, b]. (We aren't actually sorting the array in this approach, but the sorted array is taken just for demonstration). From the previous approach, we know that the required set of pairings is (a,a), (a,b), (b,b)(a,a),(a,b),(b,b). Now, we can see that while choosing the minimum elements, aa will be chosen twice and bb will be chosen once only. This happens because the number of aa's to be chosen has already been determined by the frequency of aa, leaving the rest of the places to be filled by bb. This is because, for the correct result we need to consider the elements in the ascending order. Thus, the lower number always gets priority to be added to the end result.
+
+But, if the sorted elements take the form: nums_sorted: [a, a, b, b, b, b], the correct pairing will be (a,a), (b,b), (b,b)(a,a),(b,b),(b,b). Again, in this case the number of aa's chosen is already predetermined, but since the number of aa's is odd, it doesn't impact the choice of bb in the final sum.
+
+Thus, based on the above discussion, we traverse the hashmap arrarr. If the current element is occuring freq_ifreq
+​i
+​​ number of times, and one of the elements is left to be paired with other elements in the right region(considering a virtual sorted array), we consider the current element \left \lceil\frac{freq_i}{2}\right \rceil⌈
+​2
+​
+​freq
+​i
+​​ 
+​​ ⌉ number of times and the next element occuring in the array \left \lfloor\frac{freq_j}{2}\right \rfloor⌊
+​2
+​
+​freq
+​j
+​​ 
+​​ ⌋ number of times for the final sum. To propagate the impact of this left over chosen number, we make use of a flag dd. This flag is set to 1 if there is a leftover element from the current set which will be considered one more time. The same extra element already considered is taken into account while choosing an element from the next set.
+
+While traversing the hashmap, we determine the correct number of times each element needs to be considered as discussed above. Note that the flag dd and the sumsum remains unchanged if the current element of the hashmap doesn't exist in the array.
+
+
+public class Solution {
+    public int arrayPairSum(int[] nums) {
+        int[] arr = new int[20001];
+        int lim = 10000;
+        for (int num: nums)
+            arr[num + lim]++;
+        int d = 0, sum = 0;
+        for (int i = -10000; i <= 10000; i++) {
+            sum += (arr[i + lim] + 1 - d) / 2 * i;
+            d = (2 + arr[i + lim] - d) % 2;
+        }
+        return sum;
+    }
+} 
+
+Complexity Analysis
+
+Time complexity : O(n)O(n). The whole hashmap arrarr of size nn is traversed only once.
+
+Space complexity : O(n)O(n). A hashmap arrarr of size nn is used.
+
